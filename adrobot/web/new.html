@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}New campaign{% endblock %}
+{% block create_nav %}active{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>New campaign</h1>
+  <form class="stack" method="post" action="/campaigns" onsubmit="this.querySelector('button').disabled = true">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" required maxlength="200" placeholder="Campaign name">
+    </div>
+    <div class="field">
+      <label for="country">Geo</label>
+      <input id="country" class="upper" name="country" required pattern="[A-Za-z]{2}" maxlength="2"
+             placeholder="MX, AU, RO...">
+    </div>
+    <div class="field">
+      <label for="offer">Offer</label>
+      <input id="offer" name="offer" required list="offers" autocomplete="off" placeholder="Search offers">
+      <datalist id="offers">
+        {% for offer in offers %}<option value="{{ offer.id }} · {{ offer.name }}">{% endfor %}
+      </datalist>
+    </div>
+    <div class="field">
+      <label for="domain_id">Domain</label>
+      <select id="domain_id" name="domain_id">
+        <option value="" selected>Choose a domain</option>
+        {% for row in domains %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="group_id">Group</label>
+      <select id="group_id" name="group_id">
+        <option value="" selected>Choose a group</option>
+        {% for row in groups %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="source_id">Source</label>
+      <select id="source_id" name="source_id">
+        <option value="" selected>Choose a source</option>
+        {% for row in sources %}<option value="{{ row.id }}">{{ row.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <button class="btn btn-primary" type="submit">Create</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

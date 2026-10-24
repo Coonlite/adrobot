@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{% if editor %}{{ editor.name }}{% else %}Campaigns{% endif %}{% endblock %}
+{% block main_class %}page-wide{% endblock %}
+{% block editor_nav %}active{% endblock %}
+{% block content %}
+{% if editor %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/campaigns">Campaigns</a>
+  <span aria-hidden="true">/</span>
+  <span class="crumb-current">{{ editor.name }}</span>
+  <span class="crumb-meta">
+    <span>Keitaro id <span class="mono">{{ editor.keitaro_id }}</span></span>
+    {% if place %}<span class="status {{ place }}">{{ place }}</span>{% endif %}
+  </span>
+</nav>
+{% if place and place_note[place] is defined %}
+<p class="place-note">{{ place_note[place] }}</p>
+{% endif %}
+<div class="toolbar">
+  <form method="post" action="/campaigns/{{ editor.id }}/fetch" onsubmit="this.querySelector('button').disabled = true">
+    <button class="btn btn-primary" type="submit">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>
+      Fetch streams from KT
+    </button>
+  </form>
+  <a class="btn" href="{{ tracker_link }}" target="_blank" rel="noopener">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill="currentColor" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg>
+    View in KT
+  </a>
+  <span class="spacer"></span>
+  <a class="btn" href="{{ offers_link }}" target="_blank" rel="noopener">Show all offers</a>
+</div>
+
+<div class="table-wrap section-gap">
+  {% if editor.streams %}
+  {% for stream in editor.streams %}
+  <table class="sheet{% if stream.status == 'pending' %} is-pending{% endif %}">
+    <colgroup>
+      <col class="col-offer">
+      <col class="col-share">
+      <col class="col-stats">
+      <col class="col-trends">
+      <col class="col-actions">
+    </colgroup>
+    {% if loop.first %}
+    <thead>
+      <tr>
+        <th>Offer</th>
+        <th class="num">Share</th>
+        <th>Stats</th>
+        <th>Trends</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    {% endif %}
+    <tbody>
+      <tr class="stream stream-plain">
+        <td colspan="5">
+          <div>
+            Stream: {{ stream.name }} (#{{ stream.position }})
+            <span class="meta">filter by {% if stream.filter_names %}{{ stream.filter_names | join(', ') }}{% else %}None{% endif %}, stream_id <span class="mono">{{ stream.keitaro_id }}</span>, {% if clicks_unavailable %}clicks were not read{% else %}clicks today: {{ clicks.get(stream.keitaro_id, 0) }}{% endif %}</span>
+          </div>
+          {% if stream.status == "pending" %}
+          <div class="publish">
+            <form method="post" action="/campaigns/{{ editor.id }}/streams/{{ stream.id }}/push" onsubmit="this.querySelector('button').disabled = true">
+              <button class="btn btn-primary btn-sm" type="submit">Push to KT</button>
+            </form>
+            <form method="post" action="/campaigns/{{ editor.id }}/streams/{{ stream.id }}/cancel" onsubmit="this.querySelector('button').disabled = true">
+              <button class="btn btn-sm" type="submit">Cancel</button>
+            </form>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% for offer in stream.offers %}
+      <tr class="offer-row{% if offer.status == 'removed' %} is-removed{% endif %}">
+        <td class="offer">
+          {{ names.get(offer.keitaro_offer_id, offer.keitaro_offer_id) }}
+          {% if offer.status != "synced" %}<span class="status {{ offer.status }}">{{ offer.status }}</span>{% endif %}
+          <button type="button" class="text-btn preview">(preview)</button>
+        </td>
+        <td class="share">
+          <button type="button" class="text-btn">{{ offer.share }}%</button>
+          <form method="post" action="/campaigns/{{ editor.id }}/streams/{{ stream.id }}/offers/{{ offer.keitaro_offer_id }}/pin" onsubmit="this.querySelector('button').disabled = true">
+            <button class="icon-btn{% if offer.pinned %} is-pinned{% endif %}" type="submit" aria-label="{% if offer.pinned %}Unpin{% else %}Pin{% endif %}" aria-pressed="{{ 'true' if offer.pinned else 'false' }}"{% if offer.status == 'removed' %} disabled{% endif %}>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.146.146A.5.5 0 0 1 4.5 0h7a.5.5 0 0 1 .5.5c0 .68-.342 1.174-.646 1.479-.126.125-.25.224-.354.298v4.431l.078.048c.203.127.476.314.751.555C12.36 7.775 13 8.527 13 9.5a.5.5 0 0 1-.5.5h-4v4.5c0 .276-.224 1.5-.5 1.5s-.5-1.224-.5-1.5V10h-4a.5.5 0 0 1-.5-.5c0-.973.64-1.725 1.17-2.189A6 6 0 0 1 5 6.708V2.277a3 3 0 0 1-.354-.298C4.342 1.674 4 1.179 4 .5a.5.5 0 0 1 .146-.354"/></svg>
+            </button>
+          </form>
+        </td>
+        <td class="stats"></td>
+        <td class="trends"></td>
+        <td class="actions">
+          {% if offer.status == "removed" %}
+          <form method="post" action="/campaigns/{{ editor.id }}/streams/{{ stream.id }}/offers/{{ offer.keitaro_offer_id }}/bring-back" onsubmit="this.querySelector('button').disabled = true">
+            <button class="btn btn-sm" type="submit">Bring back</button>
+          </form>
+          {% else %}
+          <form method="post" action="/campaigns/{{ editor.id }}/streams/{{ stream.id }}/offers/{{ offer.keitaro_offer_id }}/remove" onsubmit="this.querySelector('button').disabled = true">
+            <button class="btn btn-sm btn-destructive" type="submit">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path fill="currentColor" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>
+              Remove
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if stream.offers %}
+  <form class="add-offer{% if stream.status == 'pending' %} is-pending{% endif %}" method="post" action="/campaigns/{{ editor.id }}/streams/{{ stream.id }}/offers" onsubmit="this.querySelector('button').disabled = true">
+    <input name="offer" list="offers" autocomplete="off" placeholder="Search offers" aria-label="Offer for {{ stream.name }}" required>
+    <button class="btn" type="submit">Add</button>
+  </form>
+  {% endif %}
+  {% endfor %}
+  {% else %}
+  <p class="empty-note">Fetch streams to load this campaign.</p>
+  {% endif %}
+</div>
+<datalist id="offers">
+  {% for offer in offers %}<option value="{{ offer.id }} · {{ offer.name }}">{% endfor %}
+</datalist>
+{% elif campaigns %}
+<section class="card">
+  <h1>Campaigns</h1>
+  <ul class="campaign-list">
+    {% for campaign in campaigns %}
+    <li>
+      <a href="/campaigns/{{ campaign.id }}">{{ campaign.name }}</a>
+      <span class="mono">{{ campaign.keitaro_id }}</span>
+      {% if places %}
+      <span class="status {{ places[campaign.id] }}">{{ places[campaign.id] }}</span>
+      {% if place_note[places[campaign.id]] is defined %}<span class="place-note">{{ place_note[places[campaign.id]] }}</span>{% endif %}
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% else %}
+<section class="card">
+  <h1>Campaigns</h1>
+  <p class="muted">Create a campaign, then open it here.</p>
+</section>
+{% endif %}
+{% endblock %}
+{% block toasts %}
+{% if editor and names_unavailable %}
+<div class="toast" role="status">
+  <p>Offer names could not be read. Ids are shown instead.</p>
+  <button type="button" class="toast-close" aria-label="Close" onclick="this.closest('.toast').remove()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+{% endblock %}

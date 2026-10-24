@@ -1,0 +1,38 @@
+[project]
+name = "adrobot"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]",
+    "httpx",
+    "jinja2",
+    "python-dotenv>=1.2.4",
+    "python-multipart",
+    "sqlalchemy",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio", "ruff", "pyright"]
+
+[tool.fastapi]
+entrypoint = "adrobot.api.app:app"
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pyright]
+include = ["adrobot", "tests"]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]

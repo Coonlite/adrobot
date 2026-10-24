@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Adrobot{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Adrobot</a>
+    <nav class="nav">
+      <a href="/" class="{% block create_nav %}{% endblock %}">Create</a>
+      <a href="/campaigns" class="{% block editor_nav %}{% endblock %}">Campaigns</a>
+    </nav>
+  </header>
+  <main class="{% block main_class %}page{% endblock %}">{% block content %}{% endblock %}</main>
+  <aside class="toasts">
+    {% for notice in notices %}
+    <div class="toast" role="alert">
+      <p>{{ notice }}</p>
+      <button type="button" class="toast-close" aria-label="Close" onclick="this.closest('.toast').remove()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {% endfor %}
+    {% block toasts %}{% endblock %}
+  </aside>
+</body>
+</html>
